@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -47,9 +47,11 @@
 }
 [hidden] { display: none !important; }
 #app { position: fixed; inset: 0; overflow: hidden; container: app / size; }
-/* phone held upright: turn the whole game a quarter turn so it always plays in landscape */
-html.rot #app { right: auto; bottom: auto; width: var(--sh, 100vh); height: var(--sw, 100vw); transform-origin: 0 0; transform: translateX(var(--sw, 100vw)) rotate(90deg); }
 html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
+/* the page itself never scrolls, bounces or zooms; only the map pans */
+html { touch-action: none; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+body { position: fixed; inset: 0; touch-action: none; }
+img { -webkit-user-drag: none; }
 body {
   background: var(--night); color: var(--ink); font-family: var(--font);
   -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
@@ -212,8 +214,6 @@ body.ended #minimap, body.ended #zoom { display: none; }
 .tune label, .tune .tune-label { font-size: 12px; font-weight: 700; color: var(--muted); letter-spacing: .06em; text-transform: uppercase; }
 .tune output { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; min-width: 4.5em; text-align: right; }
 .tune input { width: 100%; accent-color: var(--green); min-width: 0; }
-.rotate-hint { display: none; flex: 1 1 100%; margin: 0; padding: 8px 12px; border-radius: 12px; border: 1px solid var(--gold); color: var(--gold) !important; font-size: 14px !important; font-weight: 700; text-align: center; }
-@media (pointer: coarse) { @container app (orientation: portrait) { .rotate-hint { display: block; } } }
 .btn {
   appearance: none; border: 0; border-radius: 14px; cursor: pointer;
   background: var(--green); color: var(--pill-ink); font: 800 18px var(--font);
@@ -304,20 +304,42 @@ body.ended #minimap, body.ended #zoom { display: none; }
 }
 
 /* ---------- phones in portrait: big stacked posters, start button pinned to the bottom ---------- */
+/* ---------- phones in portrait: the intro is one full screen, posters 2 + 1, nothing scrolls ---------- */
 @container app (max-width: 520px) {
-  .card.intro { --s: min(260px, calc(100cqw - 120px)); padding: 22px 20px 0; gap: 18px; }
-  .intro-head h2 { font-size: 34px; }
-  .intro-head p { font-size: 16px; }
-  .intro .lineup { gap: 26px; }
-  .intro .poster figcaption { font-size: 21px; }
-  .intro-foot { position: sticky; bottom: 0; margin: 0 -20px; padding: 12px 20px 16px; background: var(--card); border-top: 1px solid var(--card-line); }
-  .intro-foot .btn { flex: 1 1 100%; font-size: 20px; padding: 16px; }
-  .intro .rules span { font-size: 13px; }
-  .intro .tune { margin-bottom: 18px; }
-  .peek-card { --s: min(260px, calc(100cqw - 120px)); flex-direction: column; text-align: center; }
+  #intro { padding: 0; display: block; }
+  .card.intro {
+    /* poster image size: two across, and three rows' worth must fit the height */
+    --s: clamp(120px, min(calc((100cqw - 44px) / 2 - 22px), calc((100cqh - 392px) / 2)), 200px);   /* 22 = tile padding 16 + border 6 */
+    width: 100%; height: 100%; max-height: none; overflow: hidden; border: 0; border-radius: 0; box-shadow: none;
+    padding: calc(env(safe-area-inset-top, 0px) + 18px) 16px calc(env(safe-area-inset-bottom, 0px) + 16px);
+    gap: 12px; grid-template-rows: auto 1fr auto; align-content: stretch;
+  }
+  .intro-head { padding-right: 70px; }
+  .intro-head h2 { font-size: 30px; }
+  .intro-head p { font-size: 15px; line-height: 1.4; }
+  .intro .lineup { align-content: center; gap: 14px 12px; }
+  .intro .poster { gap: 12px; }
+  .intro .poster figcaption { font-size: 17px; line-height: 1.15; }
+  .intro-foot { flex-direction: column; align-items: stretch; gap: 10px; }
+  .intro .rules { justify-content: center; }
+  .intro .rules span { font-size: 12px; padding: 4px 9px; }
+  .intro-foot .btn { width: 100%; font-size: 20px; padding: 16px; }
+  .intro .tune { padding: 0; border: 0; }
+  .intro .tune summary { position: absolute; top: calc(env(safe-area-inset-top, 0px) + 24px); right: 16px; font-size: 11px; letter-spacing: .05em; }
+  .intro .tune .long { display: none; }
+  .intro .tune[open] .tune-grid {
+    position: absolute; top: calc(env(safe-area-inset-top, 0px) + 52px); left: 12px; right: 12px; z-index: 3; margin: 0;
+    padding: 14px 14px; background: var(--card); border: 1px solid var(--card-line); border-radius: 14px; box-shadow: 0 18px 44px var(--shadow);
+    grid-template-columns: auto 1fr auto; gap: 10px 8px;
+  }
+  .intro .tune[open] .tune-grid label, .intro .tune[open] .tune-grid .tune-label { font-size: 10px; }
+  .peek-card { --s: min(240px, calc(100cqw - 120px)); flex-direction: column; text-align: center; }
   .peek-text { justify-items: center; }
-  .peek-text h3 { font-size: 30px; }
+  .peek-text h3 { font-size: 28px; }
   .peek-text .btn { width: 100%; }
+  .sheet { flex-direction: column; align-items: stretch; text-align: center; }
+  .sheet .btn { width: 100%; }
+  #minimap { width: 112px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .ring, .ring.reveal, .miss, .timer.low, .wanted.found .portrait::after, .penalty, .poster, .peek-card { animation-delay: 0s; animation-duration: .01s; animation-iteration-count: 1; }
@@ -361,7 +383,6 @@ body.ended #minimap, body.ended #zoom { display: none; }
     </div>
     <div class="lineup" id="lineup"></div>
     <div class="intro-foot">
-      <p class="rotate-hint">Turn your phone sideways to play.</p>
       <div class="rules"><span>90 seconds</span><span>Wrong tap −3 s</span><span>Exact colours only</span></div>
       <button class="btn" id="startBtn" type="button" disabled>Loading map…</button>
     </div>
@@ -516,16 +537,12 @@ body.ended #minimap, body.ended #zoom { display: none; }
   const START = { x: 680, y: 1120 };
   const HOTSPOTS = [[1250, 840, 260], [1500, 900, 200], [700, 1130, 260], [2250, 740, 230], [1750, 1100, 260], [600, 560, 260]];
   const COARSE = matchMedia('(pointer: coarse)').matches;
-  let rotated = false;
-  function updateRotation() {
-    const W = innerWidth, H = innerHeight, root = document.documentElement;
-    rotated = COARSE && H > W;
-    root.style.setProperty('--sw', W + 'px'); root.style.setProperty('--sh', H + 'px');
-    root.classList.toggle('rot', rotated);
-  }
-  updateRotation();
-  // screen point -> point in the (possibly rotated) game frame
-  const P = e => rotated ? { x: e.clientY, y: innerWidth - e.clientX } : { x: e.clientX, y: e.clientY };
+  const P = e => ({ x: e.clientX, y: e.clientY });
+  // iOS Safari ignores some touch-action rules: block page pinch-zoom, double-tap zoom and rubber-band scrolling by hand
+  for (const t of ['gesturestart', 'gesturechange', 'gestureend']) document.addEventListener(t, e => e.preventDefault(), { passive: false });
+  document.addEventListener('touchmove', e => { if (e.touches.length > 1 || !e.target.closest('.tune-grid')) e.preventDefault(); }, { passive: false });
+  let lastTouchEnd = 0;
+  document.addEventListener('touchend', e => { const now = Date.now(); if (now - lastTouchEnd < 320 && !e.target.closest('button, input, summary')) e.preventDefault(); lastTouchEnd = now; }, { passive: false });
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   const $ = s => document.querySelector(s);
@@ -956,7 +973,7 @@ body.ended #minimap, body.ended #zoom { display: none; }
     if (COARSE) {   // Android: go fullscreen and hold landscape when the browser allows it
       try {
         const el = document.documentElement, req = el.requestFullscreen || el.webkitRequestFullscreen;
-        if (req && !document.fullscreenElement) Promise.resolve(req.call(el)).then(() => screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape')).catch(() => {});
+        if (req && !document.fullscreenElement) Promise.resolve(req.call(el)).catch(() => {});
       } catch (e) {}
     }
     intro.hidden = true; result.hidden = true; document.body.classList.remove('ended');
@@ -1004,7 +1021,6 @@ body.ended #minimap, body.ended #zoom { display: none; }
 
   let rt = 0;
   addEventListener('resize', () => {
-    updateRotation();
     clearTimeout(rt);
     rt = setTimeout(() => {
       if (state === 'intro') buildRound();
